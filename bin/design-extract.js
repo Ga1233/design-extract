@@ -38,6 +38,7 @@ import { formatMotionTailwind } from '../src/formatters/motion-tailwind.js';
 import { formatMotionGsap } from '../src/formatters/motion-gsap.js';
 import { formatMotionWaapi } from '../src/formatters/motion-waapi.js';
 import { formatCssVars } from '../src/formatters/css-vars.js';
+import { formatOpenProps } from '../src/formatters/open-props.js';
 import { formatPreview } from '../src/formatters/preview.js';
 import { formatFigma } from '../src/formatters/figma.js';
 import { formatReactTheme, formatShadcnTheme } from '../src/formatters/theme.js';
@@ -388,6 +389,7 @@ program
         { name: `${prefix}-motion.gsap.js`,     content: formatMotionGsap(design),   label: 'GSAP presets (CustomEase + reveals + ScrollTrigger)' },
         { name: `${prefix}-motion.waapi.js`,    content: formatMotionWaapi(design),  label: 'Web Animations API presets (zero-dependency, exact curves)' },
         { name: `${prefix}-variables.css`, content: formatCssVars(design), label: 'CSS Variables' },
+        { name: `${prefix}-open-props.css`, content: formatOpenProps(design), label: 'Open Props' },
         { name: `${prefix}-preview.html`, content: formatPreview(design), label: 'Visual Preview' },
         { name: `${prefix}-figma-variables.json`, content: formatFigma(design), label: 'Figma Variables' },
       ];
