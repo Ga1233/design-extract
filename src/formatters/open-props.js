@@ -8,9 +8,19 @@ const FALLBACK = {
   mono: 'ui-monospace, monospace',
 };
 
+// Names and values come from the page being extracted, so they are untrusted:
+// a stray `;`, `}` or `/*` would break out of the declaration.
+const SAFE_FONT_NAME = /^[\w .-]+$/;
+const UNSAFE_VALUE = /[;{}@\\<>]|\/\*|\*\/|url\(|\bimport\b|[\r\n]/i;
+
 function fontStack(name, kind) {
+  if (typeof name !== 'string' || !SAFE_FONT_NAME.test(name)) return null;
   const quoted = /\s/.test(name) ? `'${name}'` : name;
   return `${quoted}, ${FALLBACK[kind]}`;
+}
+
+function safeValue(v) {
+  return typeof v === 'string' && !UNSAFE_VALUE.test(v) ? v : null;
 }
 
 export function formatOpenProps(design) {
@@ -22,13 +32,13 @@ export function formatOpenProps(design) {
   const brand = [colors.primary, colors.secondary, colors.accent].filter(Boolean);
   if (brand.length) {
     section('Brand');
-    brand.forEach((c, i) => add(`brand-${i + 1}`, c.hex));
+    brand.forEach((c, i) => add(`brand-${i + 1}`, safeValue(c.hex)));
   }
 
   const gray = (colors.neutrals || []).slice(0, 10);
   if (gray.length) {
     section('Neutrals');
-    gray.forEach((c, i) => add(`gray-${i}`, c.hex));
+    gray.forEach((c, i) => add(`gray-${i}`, safeValue(c.hex)));
   }
 
   const fonts = design.typography?.families || [];
@@ -37,9 +47,10 @@ export function formatOpenProps(design) {
     const used = new Set();
     for (const f of fonts) {
       const kind = /mono|code/i.test(f.name) ? 'mono' : /serif/i.test(f.name) && !/sans/i.test(f.name) ? 'serif' : 'sans';
-      if (used.has(kind)) continue;
+      const stack = fontStack(f.name, kind);
+      if (!stack || used.has(kind)) continue;
       used.add(kind);
-      add(`font-${kind}`, fontStack(f.name, kind));
+      add(`font-${kind}`, stack);
     }
   }
 
@@ -58,7 +69,7 @@ export function formatOpenProps(design) {
   const shadows = design.shadows?.values || [];
   if (shadows.length) {
     section('Shadows');
-    shadows.slice(0, 6).forEach((s, i) => add(`shadow-${i + 1}`, s.raw));
+    shadows.slice(0, 6).forEach((s, i) => add(`shadow-${i + 1}`, safeValue(s.raw)));
   }
 
   return ['@layer base {', '  :root {', ...vars, '  }', '}', ''].join('\n');

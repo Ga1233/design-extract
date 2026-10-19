@@ -1601,6 +1601,17 @@ describe('formatOpenProps', () => {
     assert.match(css, /--font-sans: [^;]+, system-ui, sans-serif;/);
   });
 
+  it('does not let scraped values break out of a declaration', () => {
+    const out = formatOpenProps({
+      colors: { primary: { hex: '#fff; } body { display:none' } },
+      typography: { families: [{ name: 'Evil; } @import url(x); .a {' }, { name: 'Inter' }] },
+      shadows: { values: [{ raw: '0 0 1px red; } /* x */' }, { raw: '0 1px 2px #0003' }] },
+    });
+    assert.ok(!/@import|display:none|\/\*\s*x/.test(out), out);
+    assert.match(out, /--font-sans: Inter, system-ui/);
+    assert.match(out, /--shadow-2: 0 1px 2px #0003;/);
+  });
+
   it('still returns a valid empty layer for a bare design', () => {
     assert.equal(formatOpenProps({ colors: {} }), '@layer base {\n  :root {\n  }\n}\n');
   });
