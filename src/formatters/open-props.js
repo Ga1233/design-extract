@@ -11,11 +11,48 @@ const FALLBACK = {
 // Names and values come from the page being extracted, so they are untrusted:
 // a stray `;`, `}` or `/*` would break out of the declaration.
 const SAFE_FONT_NAME = /^[\w .-]+$/;
-const COLOR = '(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([\\d\\s.,%/-]+\\)|[a-z]+)';
-const LENGTH = '-?(?:\\d+\\.?\\d*|\\.\\d+)(?:px|rem|em|%)?';
-const COLOR_RE = new RegExp(`^${COLOR}$`, 'i');
-// One or more comma-separated layers of: inset | length | colour.
-const SHADOW_RE = new RegExp(`^(?:(?:inset|${LENGTH}|${COLOR})(?: +|(?=,)|$))+(?:, *(?:(?:inset|${LENGTH}|${COLOR})(?: +|(?=,)|$))+)*$`, 'i');
+// Allowlists check short tokens against anchored patterns with no nested
+// quantifiers, and cap the input first, so hostile input can't backtrack.
+const MAX_VALUE_LENGTH = 300;
+const HEX_RE = /^#[0-9a-f]{3,8}$/i;
+const COLOR_FN_RE = /^(?:rgb|hsl)a?\([\d\s.,%/-]{1,60}\)$/i;
+const KEYWORD_RE = /^[a-z]{3,30}$/i;
+const LENGTH_RE = /^-?(?:\d+(?:\.\d+)?|\.\d+)(?:px|rem|em|%)?$/;
+
+const isColor = (t) => HEX_RE.test(t) || COLOR_FN_RE.test(t) || KEYWORD_RE.test(t);
+
+// Split on commas and spaces that are not inside parentheses.
+function tokens(value) {
+  const out = [];
+  let depth = 0;
+  let cur = '';
+  for (const ch of value) {
+    if (ch === '(') depth++;
+    if (ch === ')' && --depth < 0) return null;
+    if (depth === 0 && (ch === ' ' || ch === ',')) {
+      if (cur) out.push(cur);
+      if (ch === ',') out.push(',');
+      cur = '';
+    } else cur += ch;
+  }
+  if (cur) out.push(cur);
+  return depth === 0 ? out : null;
+}
+
+function safeColor(v) {
+  if (typeof v !== 'string' || v.length > MAX_VALUE_LENGTH) return null;
+  const t = v.trim();
+  return isColor(t) ? t : null;
+}
+
+function safeShadow(v) {
+  if (typeof v !== 'string' || v.length > MAX_VALUE_LENGTH) return null;
+  const t = v.trim();
+  const parts = tokens(t);
+  if (!parts || !parts.length || parts[0] === ',' || parts[parts.length - 1] === ',') return null;
+  const ok = parts.every((p) => p === ',' || p.toLowerCase() === 'inset' || LENGTH_RE.test(p) || isColor(p));
+  return ok ? t : null;
+}
 
 function fontStack(name, kind) {
   if (typeof name !== 'string' || !SAFE_FONT_NAME.test(name)) return null;
@@ -23,8 +60,6 @@ function fontStack(name, kind) {
   return `${quoted}, ${FALLBACK[kind]}`;
 }
 
-const safeColor = (v) => (typeof v === 'string' && COLOR_RE.test(v.trim()) ? v.trim() : null);
-const safeShadow = (v) => (typeof v === 'string' && SHADOW_RE.test(v.trim()) ? v.trim() : null);
 
 export function formatOpenProps(design) {
   const colors = design.colors || {};
