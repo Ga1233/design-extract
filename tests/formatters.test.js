@@ -1605,8 +1605,9 @@ describe('formatOpenProps', () => {
     const out = formatOpenProps({
       colors: { primary: { hex: '#fff; } body { display:none' } },
       typography: { families: [{ name: 'Evil; } @import url(x); .a {' }, { name: 'Inter' }] },
-      shadows: { values: [{ raw: '0 0 1px red; } /* x */' }, { raw: '0 1px 2px #0003' }] },
+      shadows: { values: [{ raw: '0 0 1px red; } /* x */' }, { raw: '0 1px 2px #0003' }, { raw: "0 0 \"; image-set(x) 1px red" }, { raw: 'url(//evil/x)' }] },
     });
+    assert.ok(!/image-set|url\(/.test(out), out);
     assert.ok(!/@import|display:none|\/\*\s*x/.test(out), out);
     assert.match(out, /--font-sans: Inter, system-ui/);
     assert.match(out, /--shadow-2: 0 1px 2px #0003;/);

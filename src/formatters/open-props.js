@@ -11,7 +11,11 @@ const FALLBACK = {
 // Names and values come from the page being extracted, so they are untrusted:
 // a stray `;`, `}` or `/*` would break out of the declaration.
 const SAFE_FONT_NAME = /^[\w .-]+$/;
-const UNSAFE_VALUE = /[;{}@\\<>]|\/\*|\*\/|url\(|\bimport\b|[\r\n]/i;
+const COLOR = '(?:#[0-9a-f]{3,8}|(?:rgb|hsl)a?\\([\\d\\s.,%/-]+\\)|[a-z]+)';
+const LENGTH = '-?(?:\\d+\\.?\\d*|\\.\\d+)(?:px|rem|em|%)?';
+const COLOR_RE = new RegExp(`^${COLOR}$`, 'i');
+// One or more comma-separated layers of: inset | length | colour.
+const SHADOW_RE = new RegExp(`^(?:(?:inset|${LENGTH}|${COLOR})(?: +|(?=,)|$))+(?:, *(?:(?:inset|${LENGTH}|${COLOR})(?: +|(?=,)|$))+)*$`, 'i');
 
 function fontStack(name, kind) {
   if (typeof name !== 'string' || !SAFE_FONT_NAME.test(name)) return null;
@@ -19,9 +23,8 @@ function fontStack(name, kind) {
   return `${quoted}, ${FALLBACK[kind]}`;
 }
 
-function safeValue(v) {
-  return typeof v === 'string' && !UNSAFE_VALUE.test(v) ? v : null;
-}
+const safeColor = (v) => (typeof v === 'string' && COLOR_RE.test(v.trim()) ? v.trim() : null);
+const safeShadow = (v) => (typeof v === 'string' && SHADOW_RE.test(v.trim()) ? v.trim() : null);
 
 export function formatOpenProps(design) {
   const colors = design.colors || {};
@@ -32,13 +35,13 @@ export function formatOpenProps(design) {
   const brand = [colors.primary, colors.secondary, colors.accent].filter(Boolean);
   if (brand.length) {
     section('Brand');
-    brand.forEach((c, i) => add(`brand-${i + 1}`, safeValue(c.hex)));
+    brand.forEach((c, i) => add(`brand-${i + 1}`, safeColor(c.hex)));
   }
 
   const gray = (colors.neutrals || []).slice(0, 10);
   if (gray.length) {
     section('Neutrals');
-    gray.forEach((c, i) => add(`gray-${i}`, safeValue(c.hex)));
+    gray.forEach((c, i) => add(`gray-${i}`, safeColor(c.hex)));
   }
 
   const fonts = design.typography?.families || [];
@@ -69,7 +72,7 @@ export function formatOpenProps(design) {
   const shadows = design.shadows?.values || [];
   if (shadows.length) {
     section('Shadows');
-    shadows.slice(0, 6).forEach((s, i) => add(`shadow-${i + 1}`, safeValue(s.raw)));
+    shadows.slice(0, 6).forEach((s, i) => add(`shadow-${i + 1}`, safeShadow(s.raw)));
   }
 
   return ['@layer base {', '  :root {', ...vars, '  }', '}', ''].join('\n');
