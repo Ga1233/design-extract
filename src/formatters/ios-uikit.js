@@ -148,6 +148,9 @@ export function formatIosUIKit(tokens) {
       const value = leaf.token.$value;
 
       if (!value?.fontFamily) continue;
+      // fontFamily is a CSS stack ("Inter, sans-serif"); UIFont wants one name.
+      const family = String(value.fontFamily).split(',')[0].trim().replace(/^["']|["']$/g, '').replace(/[\\"]/g, '');
+      if (!family) continue;
 
       const parts = leaf.path.split('.');
       const name = camelCase(parts[parts.length - 1]);
@@ -157,7 +160,7 @@ export function formatIosUIKit(tokens) {
       lines.push('        weight: UIFont.Weight = .regular');
       lines.push('    ) -> UIFont {');
       lines.push(
-        `        return UIFont(name: "${value.fontFamily}", size: size)`
+        `        return UIFont(name: "${family}", size: size)`
       );
       lines.push(
         '            ?? .systemFont(ofSize: size, weight: weight)'

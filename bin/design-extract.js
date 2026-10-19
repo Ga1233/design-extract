@@ -43,6 +43,7 @@ import { formatFigma } from '../src/formatters/figma.js';
 import { formatReactTheme, formatShadcnTheme } from '../src/formatters/theme.js';
 import { formatWordPress, formatWordPressTheme } from '../src/formatters/wordpress.js';
 import { formatIosSwiftUI } from '../src/formatters/ios-swiftui.js';
+import { formatIosUIKit } from '../src/formatters/ios-uikit.js';
 import { formatAndroidCompose } from '../src/formatters/android-compose.js';
 import { formatFlutterDart } from '../src/formatters/flutter-dart.js';
 import { formatVueTheme } from '../src/formatters/vue-theme.js';
@@ -519,18 +520,16 @@ program
       const platforms = merged.platforms || ['web'];
       const dtcgTokens = formatDtcgTokens(design);
       const platformFiles = [];
-      if (platforms.includes("ios")) {
-  const dir = join(outDir, "ios");
-  mkdirSync(dir, { recursive: true });
-
-  const path = join(dir, "DesignTokens.swift");
-  writeFileSync(path, formatIosSwiftUI(dtcgTokens), "utf-8");
-  platformFiles.push({ path, label: "iOS SwiftUI" });
-
-  const uikitPath = join(dir, "DesignTokens+UIKit.swift");
-  writeFileSync(uikitPath, formatIosUIKit(dtcgTokens), "utf-8");
-  platformFiles.push({ path: uikitPath, label: "iOS UIKit" });
-}
+      if (platforms.includes('ios')) {
+        const dir = join(outDir, 'ios');
+        mkdirSync(dir, { recursive: true });
+        const path = join(dir, 'DesignTokens.swift');
+        writeFileSync(path, formatIosSwiftUI(dtcgTokens), 'utf-8');
+        platformFiles.push({ path, label: 'iOS SwiftUI' });
+        const uikitPath = join(dir, 'DesignTokens+UIKit.swift');
+        writeFileSync(uikitPath, formatIosUIKit(dtcgTokens), 'utf-8');
+        platformFiles.push({ path: uikitPath, label: 'iOS UIKit' });
+      }
       if (platforms.includes('android')) {
         const dir = join(outDir, 'android');
         mkdirSync(dir, { recursive: true });

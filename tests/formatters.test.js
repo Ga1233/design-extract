@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs';
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { formatMarkdown } from '../src/formatters/markdown.js';
@@ -1599,5 +1600,25 @@ describe('formatIosUIKit', () => {
     const result = formatIosUIKit(tokens);
 
     assert.ok(!result.includes('{primitive.'));
+  });
+});
+
+describe('formatIosUIKit font and output details', () => {
+  it('uses the first family of a CSS stack as the font name', () => {
+    const out = formatIosUIKit({ semantic: { typography: { body: { $type: 'typography', $value: { fontFamily: "'Inter', sans-serif" } } } } });
+    assert.ok(out.includes('UIFont(name: "Inter", size: size)'), out);
+    assert.ok(!out.includes('sans-serif'));
+  });
+
+  it('emits a camelCased UIColor from a primitive colour', () => {
+    const out = formatIosUIKit({ primitive: { color: { brand: { primary: { $type: 'color', $value: '#ff0000' } } } } });
+    assert.match(out, /static let brandPrimary = UIColor\(red: 1, green: 0, blue: 0, alpha: 1.0\)/);
+  });
+});
+
+describe('CLI wiring for iOS UIKit', () => {
+  it('imports formatIosUIKit wherever the CLI calls it', () => {
+    const src = readFileSync(new URL('../bin/design-extract.js', import.meta.url), 'utf-8');
+    assert.match(src, /import \{ formatIosUIKit \}/);
   });
 });
