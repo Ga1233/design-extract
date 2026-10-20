@@ -1578,6 +1578,7 @@ describe('formatPairMarkdown', () => {
     assert.match(md, /\| Voice \| other\.example \|/);
   });
 });
+
 describe('formatIosUIKit', () => {
   const tokens = formatDtcgTokens(mockDesign);
 
@@ -1590,10 +1591,25 @@ describe('formatIosUIKit', () => {
     assert.ok(result.includes('enum DLSpacing'));
   });
 
-  it('generates UIColor from token color', () => {
+  it('generates the expected UIColor components', () => {
     const result = formatIosUIKit(tokens);
 
-    assert.ok(result.includes('UIColor(red:'));
+    // #0066cc resolves to red 0, green 102/255, blue 204/255.
+    assert.ok(
+      result.includes(
+        'UIColor(red: 0, green: 0.4, blue: 0.8, alpha: 1.0)',
+      ),
+      'should convert #0066cc to the expected UIColor components',
+    );
+  });
+
+   it('generates the expected spacing value', () => {
+    const result = formatIosUIKit(tokens);
+
+    assert.ok(
+      result.includes('static let spacingS0: CGFloat = 4'),
+      'should generate the 4px spacing token as CGFloat',
+    );
   });
 
   it('does not contain unresolved token references', () => {
@@ -1605,20 +1621,63 @@ describe('formatIosUIKit', () => {
 
 describe('formatIosUIKit font and output details', () => {
   it('uses the first family of a CSS stack as the font name', () => {
-    const out = formatIosUIKit({ semantic: { typography: { body: { $type: 'typography', $value: { fontFamily: "'Inter', sans-serif" } } } } });
+    const out = formatIosUIKit({
+      semantic: {
+        typography: {
+          body: {
+            $type: 'typography',
+            $value: { fontFamily: "'Inter', sans-serif" },
+          },
+        },
+      },
+    });
+
     assert.ok(out.includes('UIFont(name: "Inter", size: size)'), out);
     assert.ok(!out.includes('sans-serif'));
   });
 
   it('emits a camelCased UIColor from a primitive colour', () => {
-    const out = formatIosUIKit({ primitive: { color: { brand: { primary: { $type: 'color', $value: '#ff0000' } } } } });
-    assert.match(out, /static let brandPrimary = UIColor\(red: 1, green: 0, blue: 0, alpha: 1.0\)/);
+    const out = formatIosUIKit({
+      primitive: {
+        color: {
+          brand: {
+            primary: { $type: 'color', $value: '#ff0000' },
+          },
+        },
+      },
+    });
+
+    assert.match(
+      out,
+      /static let brandPrimary = UIColor\(red: 1, green: 0, blue: 0, alpha: 1\.0\)/,
+    );
   });
 });
 
 describe('CLI wiring for iOS UIKit', () => {
   it('imports formatIosUIKit wherever the CLI calls it', () => {
-    const src = readFileSync(new URL('../bin/design-extract.js', import.meta.url), 'utf-8');
+    const src = readFileSync(
+      new URL('../bin/design-extract.js', import.meta.url),
+      'utf-8',
+    );
+
     assert.match(src, /import \{ formatIosUIKit \}/);
+  });
+});
+
+describe('formatIosUIKit deterministic output', () => {
+  it('generates deterministic output', () => {
+    const sampleTokens = {
+      primitive: {
+        spacing: {
+          s0: { $type: 'dimension', $value: '4px' },
+        },
+      },
+    };
+
+    assert.equal(
+      formatIosUIKit(sampleTokens),
+      formatIosUIKit(sampleTokens),
+    );
   });
 });
