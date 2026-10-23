@@ -1,6 +1,6 @@
 ---
 name: extract-design
-description: "Extract the full design language from any website URL. Produces 8 output files including AI-optimized markdown, visual HTML preview, Tailwind config, React theme, shadcn/ui theme, Figma variables, W3C design tokens, and CSS variables. Also runs WCAG accessibility scoring. Use when user says 'extract design', 'get design system', 'design language', 'design tokens', 'what colors/fonts does this site use', or '/extract-design'."
+description: "Extract the full design language from any website URL. Produces 8 output files including AI-optimized markdown, visual HTML preview, Tailwind config, React theme, shadcn/ui theme, Figma variables, W3C design tokens, and CSS variables. Also runs WCAG accessibility scoring. Use when user says 'extract design', 'get design system', 'design language', 'design tokens', 'what colors/fonts does this site use', 'turn this URL into design tokens', 'make a Tailwind theme from this site', or '/extract-design'. Do not use for building a new UI from scratch unless the user first wants to extract an existing website's design language."
 allowed-tools: Bash, Read, Write, Glob
 ---
 

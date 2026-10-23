@@ -5,6 +5,7 @@ import { formatMarkdown } from '../src/formatters/markdown.js';
 import { formatTokens } from '../src/formatters/tokens.js';
 import { formatTailwind } from '../src/formatters/tailwind.js';
 import { formatCssVars } from '../src/formatters/css-vars.js';
+import { formatOpenProps } from '../src/formatters/open-props.js';
 import { formatPreview } from '../src/formatters/preview.js';
 import { formatFigma } from '../src/formatters/figma.js';
 import { formatReactTheme, formatShadcnTheme } from '../src/formatters/theme.js';
@@ -1679,5 +1680,45 @@ describe('formatIosUIKit deterministic output', () => {
       formatIosUIKit(sampleTokens),
       formatIosUIKit(sampleTokens),
     );
+  });
+});
+
+// ── formatOpenProps ─────────────────────────────────────────────
+
+describe('formatOpenProps', () => {
+  const css = formatOpenProps(mockDesign);
+
+  it('wraps everything in @layer base :root', () => {
+    assert.match(css, /^@layer base \{\n  :root \{/);
+  });
+
+  it('maps the brand roles to --brand-N', () => {
+    assert.match(css, /--brand-1: #0066cc;/);
+  });
+
+  it('maps spacing, radii and shadows to Open Props names', () => {
+    assert.match(css, /--size-1: 4px;/);
+    assert.match(css, /--radius-2: 8px;/);
+    assert.match(css, /--shadow-1: 0 1px 3px rgba\(0,0,0,0.1\);/);
+  });
+
+  it('gives each font kind one stack with a fallback', () => {
+    assert.match(css, /--font-sans: [^;]+, system-ui, sans-serif;/);
+  });
+
+  it('does not let scraped values break out of a declaration', () => {
+    const out = formatOpenProps({
+      colors: { primary: { hex: '#fff; } body { display:none' } },
+      typography: { families: [{ name: 'Evil; } @import url(x); .a {' }, { name: 'Inter' }] },
+      shadows: { values: [{ raw: '0 0 1px red; } /* x */' }, { raw: '0 1px 2px #0003' }, { raw: "0 0 \"; image-set(x) 1px red" }, { raw: 'url(//evil/x)' }] },
+    });
+    assert.ok(!/image-set|url\(/.test(out), out);
+    assert.ok(!/@import|display:none|\/\*\s*x/.test(out), out);
+    assert.match(out, /--font-sans: Inter, system-ui/);
+    assert.match(out, /--shadow-2: 0 1px 2px #0003;/);
+  });
+
+  it('still returns a valid empty layer for a bare design', () => {
+    assert.equal(formatOpenProps({ colors: {} }), '@layer base {\n  :root {\n  }\n}\n');
   });
 });

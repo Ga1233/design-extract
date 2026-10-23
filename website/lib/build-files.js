@@ -12,6 +12,7 @@ import { formatAgentPrompt } from '../../src/formatters/agent-prompt.js';
 import { formatMotionLab } from '../../src/formatters/motion-lab.js';
 import { formatFramerMotion } from '../../src/formatters/framer-motion.js';
 import { formatCssVars } from '../../src/formatters/css-vars.js';
+import { formatOpenProps } from '../../src/formatters/open-props.js';
 import { formatPreview } from '../../src/formatters/preview.js';
 import { formatFigma } from '../../src/formatters/figma.js';
 import { formatReactTheme, formatShadcnTheme } from '../../src/formatters/theme.js';
@@ -44,6 +45,7 @@ export function buildFiles(design, targetUrl) {
     [`${prefix}-motion.html`]:        formatMotionLab(design),
     [`${prefix}-motion.framer.js`]:   formatFramerMotion(design),
     [`${prefix}-variables.css`]: formatCssVars(design),
+    [`${prefix}-open-props.css`]: formatOpenProps(design),
     [`${prefix}-preview.html`]: formatPreview(design),
     [`${prefix}.brand.html`]: formatBrandBook(design),
     [`${prefix}-figma-variables.json`]: formatFigma(design),
